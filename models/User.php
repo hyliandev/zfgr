@@ -12,6 +12,7 @@ class User extends Model {
 		
 		'password'=>[
 			'datatype'=>'varchar(255)',
+			'dont_load'=>true,
 			'minlength'=>5,
 			'prepare'=>'CMS::passwordHash',
 			'prepare_after'=>true,

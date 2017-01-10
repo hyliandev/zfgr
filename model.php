@@ -4,14 +4,26 @@ class Model {
 	// == FUNCTIONS ==
 	
 	public function __construct(){
-		self::addIDColumn();
+		self::addNecessaryColumns();
 	}
 	
 	// Static
 	
-	public static function addIDColumn(){
-		get_called_class()::$data['id']=[
+	public static function addNecessaryColumns(){
+		$class=get_called_class();
+		
+		$class::$data['id']=[
 			'datatype'=>'int unsigned not null auto_increment primary key'
+		];
+		
+		$class::$data['time_created']=[
+			'datatype'=>'int unsigned',
+			'prepare'=>'getTimeIfNull'
+		];
+		
+		$class::$data['time_updated']=[
+			'datatype'=>'int unsigned',
+			'prepare'=>'time'
 		];
 	}
 	
@@ -28,7 +40,7 @@ class Model {
 	public static function install($drop=false){
 		$table=self::tableName();
 		
-		self::addIDColumn();
+		self::addNecessaryColumns();
 		
 		$sql=($drop ? "DROP TABLE IF EXISTS $table;" : '') .
 		"CREATE TABLE IF NOT EXISTS $table (";
@@ -66,6 +78,7 @@ class Model {
 		foreach($fetch as $key=>$value){
 			$r=new $class();
 			foreach($value as $k=>$v){
+				if(!empty($class::$data[$k]['dont_load'])) continue;
 				$r->$k=$v;
 			}
 			
@@ -85,7 +98,7 @@ class Model {
 		$errors=[];
 		
 		foreach(get_called_class()::$data as $key=>$value){
-			if(!isset($this->$key) && empty($value['required'])) continue;
+			if(!isset($this->$key) && (empty($value['required']) || isset($this->id))) continue;
 			
 			if(!empty($value['required']) && empty($this->$key))
 				$errors[$key]='This field is required.';
@@ -93,8 +106,12 @@ class Model {
 				$errors[$key]='This field must be at least ' . $value['minlength'] . ' characters long';
 			elseif(!empty($value['maxlength']) && strlen($this->$key) > $value['maxlength'])
 				$errors[$key]='This field must be less than ' . $value['maxlength'] . ' characters long';
-			elseif(!empty($value['unique']) &&
-				CMS::$DB->query("SELECT COUNT(*) AS x FROM $table WHERE $key=" . CMS::$DB->quote($this->username))->fetch(PDO::FETCH_ASSOC)['x']
+			elseif(
+				!empty($value['unique'])
+				&&
+				($id=CMS::$DB->query("SELECT id FROM $table WHERE $key=" . CMS::$DB->quote($this->username))->fetch(PDO::FETCH_ASSOC)['id'])
+				&&
+				(empty($this->id) || $id!=$this->id)
 			)
 				$errors[$key]='This field must be unique; an entry with this value already exists';
 		}
@@ -112,11 +129,26 @@ class Model {
 		
 		if(!empty($errors=$this->verify())) return $errors;
 		
+		foreach($class::$data as $key=>$value){
+			if(!empty($function=$value['prepare']) && !empty($value['prepare_after']))
+				$this->$key=call_user_func($function,$this->$key);
+		}
+		
 		$table=self::tableName();
 		$sql='';
 		
 		if(!empty($this->id)){
 			// update
+			$sql="UPDATE $table SET ";
+			
+			$values=[];
+			foreach($class::$data as $key=>$value){
+				if(!empty($this->$key))
+					$values[]=$key . '=' . CMS::$DB->quote($this->$key);
+			}
+			$sql.=implode(',',$values);
+			
+			$sql.=" WHERE $table.ID=" . CMS::$DB->quote($this->id);
 		}else{
 			// insert
 			$this->id=0;
@@ -130,9 +162,6 @@ class Model {
 			$values=[];
 			foreach($list as $node){
 				$value=$this->$node;
-				
-				if(!empty($function=$class::$data[$node]['prepare']) && !empty($class::$data[$node]['prepare_after']))
-					$value=call_user_func($function,$value);
 				
 				$values[]=CMS::$DB->quote($value);
 			}
