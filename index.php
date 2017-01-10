@@ -16,7 +16,7 @@ foreach(scandir($models_dir='models') as $file){
 	}
 }
 
-require_once 'login.php';
+require_once 'session.php';
 
 if(empty(CMS::$path=explode('/',CMS::$uri=$_GET['page'])) || empty(CMS::$path[0])) CMS::$path=['home','index'];
 
