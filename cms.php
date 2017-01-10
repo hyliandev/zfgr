@@ -27,6 +27,27 @@ class CMS {
 		return password_hash($str,PASSWORD_BCRYPT);
 	}
 	
+	public static function URL(){
+		$s=$_SERVER;
+		
+		return $s['REQUEST_SCHEME'] . '://' . $s['SERVER_NAME'] . str_replace('index.php','',$s['SCRIPT_NAME']);
+	}
+	
+	public static function _URI(){
+		if(strpos('//',CMS::$uri)!=-1){
+			CMS::$uri=str_replace('//','/',CMS::$uri);
+		}
+		
+		if(substr(CMS::$uri,0,1)=='/') CMS::$uri=substr(CMS::$uri,1);
+		
+		$ret='';
+		for($i=0;$i<substr_count(CMS::$uri,'/');$i++){
+			$ret.='../';
+		}
+		
+		return $ret;
+	}
+	
 	
 	
 	
