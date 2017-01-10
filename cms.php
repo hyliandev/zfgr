@@ -15,9 +15,12 @@ class CMS {
 		
 		unset($vars);
 		
-		ob_start();
-		require_once 'views/' . $view . '.php';
-		return ob_get_clean();
+		if(file_exists($file='views/' . $view . '.php')){
+			ob_start();
+			require_once $file;
+			return ob_get_clean();
+		}else
+			echo '<div class="alert alert-danger">View <code>' . $view . '</code> not found</div>';
 	}
 	
 	public static function passwordHash($str){
