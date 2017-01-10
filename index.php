@@ -1,9 +1,16 @@
 <?php
 
-error_reporting(E_ERROR);
+error_reporting(E_ALL);
 
 require_once 'cms.php';
 require_once 'model.php';
+
+foreach(scandir($models_dir='models') as $file){
+	$file=$models_dir . '/' . $file;
+	
+	if(!is_dir($file) && substr($file,-4)=='.php')
+		require_once $file;
+}
 
 if(empty(CMS::$path=explode('/',CMS::$uri=$_GET['page'])) || empty(CMS::$path[0])) CMS::$path=['index'];
 

@@ -48,6 +48,35 @@ class Model {
 		CMS::$DB->query("DROP TABLE " . self::tableName());
 	}
 	
+	public static function get($fields='*',$where='',$limit=0,$offset=0){
+		$class=get_called_class();
+		$table=$class::tableName();
+		
+		$sql="SELECT $fields FROM $table";
+		
+		if(!empty($where)) $sql.=' ' .$where;
+		
+		if(!empty($limit)) $sql.=" LIMIT " . (!empty($offset) ? "$offset," : '') . $limit;
+		
+		if(!$q=CMS::$DB->query($sql)) return false;
+		
+		$fetch=$q->fetchAll(PDO::FETCH_ASSOC);
+		
+		$ret=[];
+		foreach($fetch as $key=>$value){
+			$r=new $class();
+			foreach($value as $k=>$v){
+				$r->$k=$v;
+			}
+			
+			if(count($fetch)==1) return $r;
+			
+			$ret[]=$r;
+		}
+		
+		return $ret;
+	}
+	
 	// Object
 	
 	public function verify(){
