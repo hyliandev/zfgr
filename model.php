@@ -51,15 +51,37 @@ class Model {
 	// Object
 	
 	public function verify(){
+		$table=self::tableName();
+		
 		$errors=[];
 		
 		foreach(get_called_class()::$data as $key=>$value){
+			if(!isset($this->$key) && empty($value['required'])) continue;
 			
+			if(!empty($value['required']) && empty($this->$key))
+				$errors[$key]='This field is required.';
+			elseif(!empty($value['minlength']) && strlen($this->$key) < $value['minlength'])
+				$errors[$key]='This field must be at least ' . $value['minlength'] . ' characters long';
+			elseif(!empty($value['maxlength']) && strlen($this->$key) > $value['maxlength'])
+				$errors[$key]='This field must be less than ' . $value['maxlength'] . ' characters long';
+			elseif(!empty($value['unique']) &&
+				CMS::$DB->query("SELECT COUNT(*) AS x FROM $table WHERE $key=" . CMS::$DB->quote($this->username))->fetch(PDO::FETCH_ASSOC)['x']
+			)
+				$errors[$key]='This field must be unique; an entry with this value already exists';
 		}
+		
+		die(CMS::debug($errors));
+		
+		return true;
 	}
 	
 	public function save(){
-		$this->verify();
+		foreach(get_called_class()::$data as $key=>$value){
+			if(!empty($function=$value['prepare']))
+				$this->$key=call_user_func($function,$this->$key);
+		}
+		
+		if(!empty($this->verify())) return;
 		
 		$table=self::tableName();
 		$sql='';
@@ -79,9 +101,6 @@ class Model {
 			$values=[];
 			foreach($list as $node){
 				$value=$this->$node;
-				
-				if(!empty($function=get_called_class()::$data[$node]['prepare']))
-					$value=call_user_func($function,$value);
 				
 				$values[]=CMS::$DB->quote($value);
 			}
@@ -116,13 +135,15 @@ class User extends Model {
 			'datatype'=>'varchar(64)',
 			'maxlength'=>64,
 			'minlength'=>1,
+			'required'=>true,
 			'unique'=>true
 		],
 		
 		'password'=>[
 			'datatype'=>'varchar(255)',
 			'minlength'=>5,
-			'prepare'=>'CMS::passwordHash'
+			'prepare'=>'CMS::passwordHash',
+			'required'=>true
 		]
 	];
 	
@@ -130,8 +151,8 @@ class User extends Model {
 }
 
 $user=new User();
-$user->username='';
-$user->password='boob';
+$user->username='HylianDev';
+$user->password='boobs';
 $user->save();
 
 ?>
