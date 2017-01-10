@@ -20,6 +20,10 @@ class CMS {
 		return ob_get_clean();
 	}
 	
+	public static function passwordHash($str){
+		return password_hash($str,PASSWORD_BCRYPT);
+	}
+	
 	
 	
 	
