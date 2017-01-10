@@ -1,6 +1,6 @@
 <?php
 
-class Sessions extends Model {
+class Session extends Model {
 	public static $data=[
 		'uid'=>[
 			'datatype'=>'int unsigned'
@@ -11,7 +11,8 @@ class Sessions extends Model {
 		],
 		
 		'session_id'=>[
-			'datatype'=>'varchar(255)'
+			'datatype'=>'varchar(255)',
+			'unique'=>true
 		]
 	];
 	

@@ -12,9 +12,9 @@ class Model {
 	public static function addNecessaryColumns(){
 		$class=get_called_class();
 		
-		$class::$data['id']=[
+		$class::$data=array_merge(['id'=>[
 			'datatype'=>'int unsigned not null auto_increment primary key'
-		];
+		]],$class::$data);
 		
 		$class::$data['time_created']=[
 			'datatype'=>'int unsigned',
@@ -66,7 +66,7 @@ class Model {
 		
 		$sql="SELECT $fields FROM $table";
 		
-		if(!empty($where)) $sql.=' ' .$where;
+		if(!empty($where)) $sql.=' WHERE ' .$where;
 		
 		if(!empty($limit)) $sql.=" LIMIT " . (!empty($offset) ? "$offset," : '') . $limit;
 		

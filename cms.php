@@ -42,6 +42,8 @@ class CMS {
 	public static $file='controllers';
 	public static $params=[];
 	
+	public static $session;
+	
 	public static $yield='';
 }
 

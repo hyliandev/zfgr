@@ -1,6 +1,6 @@
 <?php
 
-error_reporting(0);
+error_reporting(E_ALL);
 
 require_once 'cms.php';
 require_once 'model.php';
@@ -15,6 +15,8 @@ foreach(scandir($models_dir='models') as $file){
 		$node::install();
 	}
 }
+
+require_once 'login.php';
 
 if(empty(CMS::$path=explode('/',CMS::$uri=$_GET['page'])) || empty(CMS::$path[0])) CMS::$path=['index'];
 
