@@ -70,18 +70,18 @@ class Model {
 				$errors[$key]='This field must be unique; an entry with this value already exists';
 		}
 		
-		die(CMS::debug($errors));
-		
-		return true;
+		return $errors;
 	}
 	
 	public function save(){
-		foreach(get_called_class()::$data as $key=>$value){
-			if(!empty($function=$value['prepare']))
+		$class=get_called_class();
+		
+		foreach($class::$data as $key=>$value){
+			if(!empty($function=$value['prepare']) && empty($value['prepare_after']))
 				$this->$key=call_user_func($function,$this->$key);
 		}
 		
-		if(!empty($this->verify())) return;
+		if(!empty($errors=$this->verify())) return $errors;
 		
 		$table=self::tableName();
 		$sql='';
@@ -92,7 +92,7 @@ class Model {
 			// insert
 			$this->id=0;
 			$list=[];
-			foreach(get_called_class()::$data as $key=>$value){
+			foreach($class::$data as $key=>$value){
 				if(isset($this->$key)) $list[]=$key;
 			}
 			
@@ -102,6 +102,9 @@ class Model {
 			foreach($list as $node){
 				$value=$this->$node;
 				
+				if(!empty($function=$class::$data[$node]['prepare']) && !empty($class::$data[$node]['prepare_after']))
+					$value=call_user_func($function,$value);
+				
 				$values[]=CMS::$DB->quote($value);
 			}
 			$sql.=implode(',',$values);
@@ -109,6 +112,8 @@ class Model {
 			$sql.=");";
 		}
 		CMS::$DB->query($sql);
+		
+		return true;
 	}
 	
 	
@@ -143,6 +148,7 @@ class User extends Model {
 			'datatype'=>'varchar(255)',
 			'minlength'=>5,
 			'prepare'=>'CMS::passwordHash',
+			'prepare_after'=>true,
 			'required'=>true
 		]
 	];
@@ -151,8 +157,11 @@ class User extends Model {
 }
 
 $user=new User();
-$user->username='HylianDev';
+$user->username=base64_encode(rand());
 $user->password='boobs';
-$user->save();
+
+if(is_array($errors=$user->save())){
+	die(CMS::debug($errors));
+}
 
 ?>
